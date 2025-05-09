@@ -19,7 +19,24 @@ def train_step(dataloader, network, criterion, optimizer):
       criterion - class implementing the loss function
       optimizer - class implementing the optimizer
     """
-    pass
+    X = dataloader.data_input
+    y = dataloader.data_output
+    # Forward
+    predictions = network.forward(X)
+    # Loss berechnen
+    loss = criterion.calc_loss(predictions, y, network.weights)
+    # Gradient Data Loss
+    grad_data = criterion.gradient_data_loss(predictions, y)
+    # Gradient Reg Loss
+    grad_reg = criterion.gradient_reg(network.weights)
+    # Backprop
+    grad_w = network.backprop_layer_weights(X, grad_data) + grad_reg
+    grad_b = network.backprop_layer_bias(grad_data)
+    # Update Parameter
+    network.weights = optimizer.step(grad_w, network.weights)
+    network.bias = optimizer.step(grad_b, network.bias)
+    return loss
+
 
 def train(epochs, dataloader, network, criterion, optimizer):
 

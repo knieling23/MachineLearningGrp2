@@ -30,7 +30,7 @@ class bgd():
         Return:
           Die optimierten Parameter
         """
-        pass
+        return param - self.step_size * gradient
 
 
 class TestCase_bgd(unittest.TestCase):
