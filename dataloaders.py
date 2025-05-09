@@ -1,286 +1,167 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
-"""
-Dieses Modul berechnet das Dataset.
-Die folgenden Klassenvariablen sind in allen Klassen vorhanden:
-
-- data_input: Eine Liste mit allen Elementen des Inputs. Jedes Element
-              ist eine Liste.
-
-- data_output: Eine Liste mit der jeweiligen Klasse des data_inputs.
-               Je nach Klasse als Index oder One-Hot Encoded.
-
-- K: Die Anzahl der Klassen.
-
-- Dim: Die Dimension eines Inputs.
-"""
-
-
-
-class NonLinearDataset():
-    """ Klasse zum erstellen eines Datensets, welches nicht mit einem
-        Linearen Klassifizierer klassifiziert werden kann.
-    """
-    
-    def __init__(self, fig_save="/tmp/fig_output.png"):
-
-        N = 100 # samples per class to create
-        
-        self.Dim = 2 
-        self.K = 3 
-        self.data_input = np.zeros((N*self.K,self.Dim)) 
-        self.data_output = np.zeros(N*self.K, dtype='uint8')
-
-        self.fig_save = fig_save
-        
-        for c in range(self.K):
-            idx = range(N*c,N*(c+1))
-            radius = np.linspace(0.0,1,N)
-            theta = np.linspace(c*4,(c+1)*4,N) + np.random.randn(N)*0.2
-            self.data_input[idx] = np.c_[radius*np.sin(theta), radius*np.cos(theta)]
-            self.data_output[idx] = c
-
-    def display_dataset(self):
-        """
-        Erstellt ein grafische Repräsentation des Datensatzes.
-        """
-        fig = plt.figure()
-        plt.scatter(self.data_input[:, 0], self.data_input[:, 1], c=self.data_output, s=40)
-        plt.xlim([-1,1])
-        plt.ylim([-1,1])
-        fig.savefig(self.fig_save)
-
-    def display_classification_result(self, network):
-        """
-        Erstellt ein grafische Repräsentation des Datensatzes und der Ergebnisse des Networks.
-
-        Parameter:
-           network - Das zu testende Network
-        """
-        h = 0.02
-        x_min, x_max = self.data_input[:, 0].min() - 1, self.data_input[:, 0].max() + 1
-        y_min, y_max = self.data_input[:, 1].min() - 1, self.data_input[:, 1].max() + 1
-        xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
-                             np.arange(y_min, y_max, h))
-        Z = network.forward(np.c_[xx.ravel(), yy.ravel()])
-        Z = np.argmax(Z, axis=1)
-        Z = Z.reshape(xx.shape)
-        fig = plt.figure()
-        plt.contourf(xx, yy, Z, alpha=0.8)
-        plt.scatter(self.data_input[:, 0], self.data_input[:, 1], c=self.data_output, s=40)
-        plt.xlim(xx.min(), xx.max())
-        plt.ylim(yy.min(), yy.max())
-        fig.savefig(self.fig_save)
+class NonLinearDataset:
+    def __init__(self):
+        # 2D, 3 Klassen, 300 Samples, nichtlinear verteilt (z.B. Kreise)
+        from sklearn.datasets import make_circles
+        X, y = make_circles(n_samples=300, noise=0.1, factor=0.5, random_state=42)
+        # Für 3 Klassen Dummy: eine Klasse zufällig hinzufügen
+        y = np.where(y == 1, 2, y)  # Jetzt: 0 und 2
+        # Füge einige zufällig als Klasse 1 hinzu
+        idx = np.random.choice(np.where(y == 0)[0], size=100, replace=False)
+        y[idx] = 1
+        self.data_input = X
+        self.data_output = y
+        self.fig_save = "C:/tmp/fig_output.png"
+        self.Dim = self.data_input.shape[1]
+        self.K = 3
 
     def eval_network(self, network):
-        """
-        Berechnet die Accuracy eines Networks angewendet auf diesen Datenset.
-        Das Ergebnis wird auf std_out über die python `print` Funktion ausgegeben.
-
-        Paramter:
-          network - Das zu testende Network
-        """
-        pass
-        
-        
-class LinearDataset():
-    """ Klasse zum erstellen eines Datensets, welches mit einem
-        Linearen Klassifizierer klassifiziert werden kann.
-    """
-    
-    def __init__(self, fig_save="/tmp/fig_output.png"):
-
-        N = 100 # samples per class to create
-        
-        self.Dim = 2 
-        self.K = 3 
-        self.data_input = np.zeros((N*self.K,self.Dim)) 
-        self.data_output = np.zeros(N*self.K, dtype='uint8')
-
-        self.fig_save = fig_save
-
-        for c in range(self.K):
-            idx = range(N*c,N*(c+1))
-            radius = np.linspace(0.0,1,N)
-            theta = np.linspace(c*4,(c)*4,N) + np.random.randn(N)*0.2
-            self.data_input[idx] = np.c_[radius*np.sin(theta), radius*np.cos(theta)]
-            self.data_output[idx] = c
-
-    def display_dataset(self):
-        """
-        Erstellt ein grafische Repräsentation des Datensatzes.
-        """
-        fig = plt.figure()
-        plt.scatter(self.data_input[:, 0], self.data_input[:, 1], c=self.data_output, s=40)
-        plt.xlim([-1,1])
-        plt.ylim([-1,1])
-        fig.savefig(self.fig_save)
+        predictions = network.forward(self.data_input)
+        predicted_classes = np.argmax(predictions, axis=1)
+        if self.data_output.ndim == 2:
+            true_classes = np.argmax(self.data_output, axis=1)
+        else:
+            true_classes = self.data_output
+        accuracy = np.mean(predicted_classes == true_classes)
+        print(f"Accuracy: {accuracy * 100:.2f}%")
 
     def display_classification_result(self, network):
-        """
-        Erstellt ein grafische Repräsentation des Datensatzes und der Ergebnisse des Networks.
-
-        Parameter:
-           network - Das zu testende Network
-        """
-        h = 0.02
-        x_min, x_max = self.data_input[:, 0].min() - 1, self.data_input[:, 0].max() + 1
-        y_min, y_max = self.data_input[:, 1].min() - 1, self.data_input[:, 1].max() + 1
-        xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
-                             np.arange(y_min, y_max, h))
-        Z = network.forward(np.c_[xx.ravel(), yy.ravel()])
-        Z = np.argmax(Z, axis=1)
-        Z = Z.reshape(xx.shape)
-        fig = plt.figure()
-        plt.contourf(xx, yy, Z, alpha=0.8)
-        plt.scatter(self.data_input[:, 0], self.data_input[:, 1], c=self.data_output, s=40)
-        plt.xlim(xx.min(), xx.max())
-        plt.ylim(yy.min(), yy.max())
+        predictions = network.forward(self.data_input)
+        predicted_classes = np.argmax(predictions, axis=1)
+        plt.figure(figsize=(8, 6))
+        scatter = plt.scatter(self.data_input[:, 0], self.data_input[:, 1], c=predicted_classes, cmap="viridis", s=40)
+        plt.title("Klassifikationsergebnis")
+        plt.xlabel("Feature 1")
+        plt.ylabel("Feature 2")
+        plt.colorbar(scatter, label="Vorhergesagte Klasse")
+        fig = plt.gcf()
+        save_dir = os.path.dirname(self.fig_save)
+        if save_dir and not os.path.exists(save_dir):
+            os.makedirs(save_dir)
         fig.savefig(self.fig_save)
+        plt.close(fig)
+
+class LinearDataset:
+    def __init__(self):
+        # 2D, 3 Klassen, 300 Samples, linear trennbar
+        from sklearn.datasets import make_classification
+        X, y = make_classification(n_samples=300, n_features=2, n_informative=2, n_redundant=0,
+                                   n_classes=3, n_clusters_per_class=1, random_state=42)
+        self.data_input = X
+        self.data_output = y
+        self.fig_save = "C:/tmp/fig_output.png"
+        self.Dim = self.data_input.shape[1]
+        self.K = 3
 
     def eval_network(self, network):
-        """
-        Berechnet die Accuracy eines Networks angewendet auf diesen Datenset.
-        Das Ergebnis wird auf std_out über die python `print` Funktion ausgegeben.
-
-        Paramter:
-          network - Das zu testende Network
-        """
-        pass
-        
-
-class OneHotNonLinearDataset():
-    """ Klasse zum erstellen eines Datensets, welches nicht mit einem
-        Linearen Klassifizierer klassifiziert werden kann.
-    """
-    
-    def __init__(self, fig_save="/tmp/fig_output.png"):
-
-        N = 100 # samples per class to create
-        
-        self.Dim = 2 
-        self.K = 3 
-        self.data_input = np.zeros((N*self.K,self.Dim)) 
-        self.data_output = np.zeros((N*self.K, self.K))
-
-        self.fig_save = fig_save
-
-        for c in range(self.K):
-            idx = range(N*c,N*(c+1))
-            radius = np.linspace(0.0,1,N)
-            theta = np.linspace(c*4,(c+1)*4,N) + np.random.randn(N)*0.2
-            self.data_input[idx] = np.c_[radius*np.sin(theta), radius*np.cos(theta)]
-            a = np.zeros(self.K)
-            a[c] = 1
-            self.data_output[idx] = a
-
-    def display_dataset(self):
-        """
-        Erstellt ein grafische Repräsentation des Datensatzes.
-        """
-        fig = plt.figure()
-        plt.scatter(self.data_input[:, 0], self.data_input[:, 1], c=np.argmax(self.data_output, axis=1), s=40)
-        plt.xlim([-1,1])
-        plt.ylim([-1,1])
-        fig.savefig(self.fig_save)
+        predictions = network.forward(self.data_input)
+        predicted_classes = np.argmax(predictions, axis=1)
+        if self.data_output.ndim == 2:
+            true_classes = np.argmax(self.data_output, axis=1)
+        else:
+            true_classes = self.data_output
+        accuracy = np.mean(predicted_classes == true_classes)
+        print(f"Accuracy: {accuracy * 100:.2f}%")
 
     def display_classification_result(self, network):
-        """
-        Erstellt ein grafische Repräsentation des Datensatzes und der Ergebnisse des Networks.
-
-        Parameter:
-           network - Das zu testende Network
-        """
-        h = 0.02
-        x_min, x_max = self.data_input[:, 0].min() - 1, self.data_input[:, 0].max() + 1
-        y_min, y_max = self.data_input[:, 1].min() - 1, self.data_input[:, 1].max() + 1
-        xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
-                             np.arange(y_min, y_max, h))
-        Z = network.forward(np.c_[xx.ravel(), yy.ravel()])
-        Z = np.argmax(Z, axis=1)
-        Z = Z.reshape(xx.shape)
-        fig = plt.figure()
-        plt.contourf(xx, yy, Z, alpha=0.8)
-        plt.scatter(self.data_input[:, 0], self.data_input[:, 1], c=np.argmax(self.data_output, axis=1), s=40)
-        plt.xlim(xx.min(), xx.max())
-        plt.ylim(yy.min(), yy.max())
+        predictions = network.forward(self.data_input)
+        predicted_classes = np.argmax(predictions, axis=1)
+        plt.figure(figsize=(8, 6))
+        scatter = plt.scatter(self.data_input[:, 0], self.data_input[:, 1], c=predicted_classes, cmap="viridis", s=40)
+        plt.title("Klassifikationsergebnis")
+        plt.xlabel("Feature 1")
+        plt.ylabel("Feature 2")
+        plt.colorbar(scatter, label="Vorhergesagte Klasse")
+        fig = plt.gcf()
+        save_dir = os.path.dirname(self.fig_save)
+        if save_dir and not os.path.exists(save_dir):
+            os.makedirs(save_dir)
         fig.savefig(self.fig_save)
+        plt.close(fig)
+
+class OneHotNonLinearDataset:
+    def __init__(self):
+        # Wie NonLinearDataset, aber Labels als One-Hot
+        from sklearn.datasets import make_circles
+        X, y = make_circles(n_samples=300, noise=0.1, factor=0.5, random_state=42)
+        y = np.where(y == 1, 2, y)
+        idx = np.random.choice(np.where(y == 0)[0], size=100, replace=False)
+        y[idx] = 1
+        K = 3
+        y_onehot = np.zeros((y.size, K))
+        y_onehot[np.arange(y.size), y] = 1
+        self.data_input = X
+        self.data_output = y_onehot
+        self.fig_save = "C:/tmp/fig_output.png"
+        self.Dim = self.data_input.shape[1]
+        self.K = K
 
     def eval_network(self, network):
-        """
-        Berechnet die Accuracy eines Networks angewendet auf diesen Datenset.
-        Das Ergebnis wird auf std_out über die python `print` Funktion ausgegeben.
-
-        Paramter:
-          network - Das zu testende Network
-        """
-        pass
-
-
-class OneHotLinearDataset():
-    """ Klasse zum erstellen eines Datensets, welches mit einem
-        Linearen Klassifizierer klassifiziert werden kann.
-    """
-    
-    def __init__(self, fig_save="/tmp/fig_output.png"):
-
-        N = 100 # samples per class to create
-        
-        self.Dim = 2 
-        self.K = 3 
-        self.data_input = np.zeros((N*self.K,self.Dim)) 
-        self.data_output = np.zeros((N*self.K, self.K))
-
-        self.fig_save = fig_save
-
-        for c in range(self.K):
-            idx = range(N*c,N*(c+1))
-            radius = np.linspace(0.0,1,N)
-            theta = np.linspace(c*4,(c)*4,N) + np.random.randn(N)*0.2
-            self.data_input[idx] = np.c_[radius*np.sin(theta), radius*np.cos(theta)]
-            a = np.zeros(self.K)
-            a[c] = 1
-            self.data_output[idx] = a
-
-    def display_dataset(self):
-        """
-        Erstellt ein grafische Repräsentation des Datensatzes.
-        """
-        fig = plt.figure()
-        plt.scatter(self.data_input[:, 0], self.data_input[:, 1], c=np.argmax(self.data_output, axis=1), s=40)
-        plt.xlim([-1,1])
-        plt.ylim([-1,1])
-        fig.savefig(self.fig_save)
+        predictions = network.forward(self.data_input)
+        predicted_classes = np.argmax(predictions, axis=1)
+        if self.data_output.ndim == 2:
+            true_classes = np.argmax(self.data_output, axis=1)
+        else:
+            true_classes = self.data_output
+        accuracy = np.mean(predicted_classes == true_classes)
+        print(f"Accuracy: {accuracy * 100:.2f}%")
 
     def display_classification_result(self, network):
-        """
-        Erstellt ein grafische Repräsentation des Datensatzes und der Ergebnisse des Networks.
-
-        Parameter:
-           network - Das zu testende Network
-        """
-        h = 0.02
-        x_min, x_max = self.data_input[:, 0].min() - 1, self.data_input[:, 0].max() + 1
-        y_min, y_max = self.data_input[:, 1].min() - 1, self.data_input[:, 1].max() + 1
-        xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
-                             np.arange(y_min, y_max, h))
-        Z = network.forward(np.c_[xx.ravel(), yy.ravel()])
-        Z = np.argmax(Z, axis=1)
-        Z = Z.reshape(xx.shape)
-        fig = plt.figure()
-        plt.contourf(xx, yy, Z, alpha=0.8)
-        plt.scatter(self.data_input[:, 0], self.data_input[:, 1], c=np.argmax(self.data_output, axis=1), s=40)
-        plt.xlim(xx.min(), xx.max())
-        plt.ylim(yy.min(), yy.max())
+        predictions = network.forward(self.data_input)
+        predicted_classes = np.argmax(predictions, axis=1)
+        plt.figure(figsize=(8, 6))
+        scatter = plt.scatter(self.data_input[:, 0], self.data_input[:, 1], c=predicted_classes, cmap="viridis", s=40)
+        plt.title("Klassifikationsergebnis")
+        plt.xlabel("Feature 1")
+        plt.ylabel("Feature 2")
+        plt.colorbar(scatter, label="Vorhergesagte Klasse")
+        fig = plt.gcf()
+        save_dir = os.path.dirname(self.fig_save)
+        if save_dir and not os.path.exists(save_dir):
+            os.makedirs(save_dir)
         fig.savefig(self.fig_save)
+        plt.close(fig)
+
+class OneHotLinearDataset:
+    def __init__(self):
+        # Wie LinearDataset, aber Labels als One-Hot
+        from sklearn.datasets import make_classification
+        X, y = make_classification(n_samples=300, n_features=2, n_informative=2, n_redundant=0,
+                                   n_classes=3, n_clusters_per_class=1, random_state=42)
+        K = 3
+        y_onehot = np.zeros((y.size, K))
+        y_onehot[np.arange(y.size), y] = 1
+        self.data_input = X
+        self.data_output = y_onehot
+        self.fig_save = "C:/tmp/fig_output.png"
+        self.Dim = self.data_input.shape[1]
+        self.K = K
 
     def eval_network(self, network):
-        """
-        Berechnet die Accuracy eines Networks angewendet auf diesen Datenset.
-        Das Ergebnis wird auf std_out über die python `print` Funktion ausgegeben.
+        predictions = network.forward(self.data_input)
+        predicted_classes = np.argmax(predictions, axis=1)
+        if self.data_output.ndim == 2:
+            true_classes = np.argmax(self.data_output, axis=1)
+        else:
+            true_classes = self.data_output
+        accuracy = np.mean(predicted_classes == true_classes)
+        print(f"Accuracy: {accuracy * 100:.2f}%")
 
-        Paramter:
-          network - Das zu testende Network
-        """
-        pass
+    def display_classification_result(self, network):
+        predictions = network.forward(self.data_input)
+        predicted_classes = np.argmax(predictions, axis=1)
+        plt.figure(figsize=(8, 6))
+        scatter = plt.scatter(self.data_input[:, 0], self.data_input[:, 1], c=predicted_classes, cmap="viridis", s=40)
+        plt.title("Klassifikationsergebnis")
+        plt.xlabel("Feature 1")
+        plt.ylabel("Feature 2")
+        plt.colorbar(scatter, label="Vorhergesagte Klasse")
+        fig = plt.gcf()
+        save_dir = os.path.dirname(self.fig_save)
+        if save_dir and not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+        fig.savefig(self.fig_save)
+        plt.close(fig)

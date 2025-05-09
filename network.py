@@ -27,7 +27,7 @@ class linearClassifier():
         Parameter:
           data_input - Input des Datasets
         """
-        pass
+        return np.dot(data_input, self.weights) + self.bias
 
     def backprop_layer_weights(self, data_input, score_gradients):
         """
@@ -37,7 +37,7 @@ class linearClassifier():
           data_input - Input des Datasets
           score_gradients - Der Gradient aus der Loss-Function
         """
-        pass
+        return np.dot(data_input.T, score_gradients)
 
     def backprop_layer_bias(self, score_gradients):
         """
@@ -46,7 +46,7 @@ class linearClassifier():
         Parameter:
           score_gradients - Der Gradient aus der Loss-Function
         """
-        pass
+        return np.sum(score_gradients, axis=0, keepdims=True)
 
 
 class linearReluClassifier():
@@ -67,7 +67,9 @@ class linearReluClassifier():
         Parameter:
           data_input - Input des Datasets
         """
-        pass
+        self.last_input = data_input  # falls benötigt für Backprop
+        linear_output = np.dot(data_input, self.weights) + self.bias
+        return np.maximum(0, linear_output)
     
     def backprop_relu(self, dscores, probs):
         """
@@ -78,7 +80,8 @@ class linearReluClassifier():
           dscores - Gradient der Loss-Function
           probs - Output des Networks
         """
-        pass
+        relu_grad = probs > 0
+        return dscores * relu_grad
 
     def backprop_layer_weights(self, data_input, score_gradients):
         """
@@ -88,7 +91,7 @@ class linearReluClassifier():
           data_input - Input des Datasets
           score_gradients - Der Gradient aus der Loss-Function
         """
-        pass
+        return np.dot(data_input.T, score_gradients)
 
     def backprop_layer_bias(self, score_gradients):
         """
@@ -97,7 +100,7 @@ class linearReluClassifier():
         Parameter:
           score_gradients - Der Gradient aus der Loss-Function
         """
-        pass
+        return np.sum(score_gradients, axis=0, keepdims=True)
 
     
 class TestCase_linearClassifier(unittest.TestCase):
