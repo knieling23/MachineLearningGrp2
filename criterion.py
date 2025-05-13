@@ -63,7 +63,7 @@ class softmax_cross_entropy_loss():
     def calc_loss(self, prediction, correct_output, weights):
         data_loss = self._calc_data_loss(prediction, correct_output)
         reg_loss = self._calc_reg_loss(weights)
-        return data_loss + self.reg * reg_loss
+        return data_loss + 2 * self.reg * reg_loss
 
     def gradient_data_loss(self, prediction, correct_output):
         num_samples = prediction.shape[0]
