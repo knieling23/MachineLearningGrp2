@@ -45,12 +45,11 @@ class softmax_cross_entropy_loss():
     def _softmax(self, prediction):
         exp_scores = np.exp(prediction - np.max(prediction, axis=1, keepdims=True))
         return exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
-
+    
     def _cross_entropy(self, prediction, correct_output):
-        true_logits = prediction[np.arange(len(prediction)), correct_output]
-        log_sum_exp = np.log(np.sum(np.exp(prediction), axis=1))
-        ce = -true_logits + log_sum_exp
-        return np.mean(ce)
+        probs = self._softmax(prediction)
+        log_likelihood = np.log(probs[np.arange(len(correct_output)), correct_output])
+        return np.mean(log_likelihood)
 
     def _calc_data_loss(self, prediction, correct_output):
         probs = self._softmax(prediction)
