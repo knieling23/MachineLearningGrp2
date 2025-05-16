@@ -46,15 +46,36 @@ class softmax_cross_entropy_loss():
         exp_scores = np.exp(prediction - np.max(prediction, axis=1, keepdims=True))
         return exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
     
-    def _cross_entropy(self, prediction, correct_output):
-        probs = self._softmax(prediction)
-        log_likelihood = np.log(probs[np.arange(len(correct_output)), correct_output])
+    def _cross_entropy(self, probs, correct_output):
+        """
+        Berechnet die negative Cross-Entropy zwischen einer Wahrscheinlichkeitsverteilung und korrekten Labels.
+        
+        Parameter:
+          probs - Bereits berechnete Wahrscheinlichkeitsverteilung (z.B. aus _softmax)
+          correct_output - Korrekte Klassen als Indizes
+        """
+        # Logarithmus der Wahrscheinlichkeiten für die korrekten Klassen
+        log_likelihood = -np.log(probs[np.arange(len(correct_output)), correct_output])
+        
+        # Mittelwert der Log-Likelihood
         return np.mean(log_likelihood)
 
     def _calc_data_loss(self, prediction, correct_output):
+        """
+        Berechnet den Datenverlust mittels Cross-Entropy.
+        
+        Parameter:
+          prediction - Vorhersagen des Modells
+          correct_output - Korrekte Klassen als Indizes
+        
+        Returns:
+          Cross-Entropy Loss (niedrigere Werte = bessere Übereinstimmung)
+        """
+        # Softmax anwenden, um Wahrscheinlichkeiten zu erhalten
         probs = self._softmax(prediction)
-        log_likelihood = -np.log(probs[range(len(correct_output)), correct_output])
-        return np.mean(log_likelihood)
+        
+        # Cross-Entropy Loss = negative von _cross_entropy
+        return self._cross_entropy(probs, correct_output)
 
     def _calc_reg_loss(self, weights):
         return int(np.sum(weights ** 2) / 4)
